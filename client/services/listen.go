@@ -1,16 +1,24 @@
 package services
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"net"
 	"strings"
+)
+
+var (
+	privateKey, _ = rsa.GenerateKey(rand.Reader, 2048)
+
+	publicKey = privateKey.PublicKey
 )
 
 func Listen(port string){
 	fmt.Printf("listening on %s\n", port)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%s", port));
-	
+	RegisterSelf("user1", "localhost:3001", publicKey)
 	if err!=nil{
 		msg:= fmt.Sprintf("Error occured: %s", err)
 		fmt.Println(msg)
@@ -32,7 +40,7 @@ func startConnection(conn net.Conn){
 
 	for{
 
-		message, err := read(conn)
+		message, err := read(conn, *privateKey)
 
 		if len(message) == 0{
 			continue
@@ -47,7 +55,7 @@ func startConnection(conn net.Conn){
 			break
 		}
 
-		write(conn, "Acknowledged!")
+		// write(conn, "Acknowledged!")
 
 		fmt.Printf("received message from %s: ", client)
 		fmt.Println(message)
